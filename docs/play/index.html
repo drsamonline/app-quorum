@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en-IN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quorum — signed votes, and a root anyone can check</title>
+<meta name="description" content="Cast signed votes and recompute the root on a second device from the payloads. A vote with a broken signature is rejected and named.">
+<meta name="theme-color" content="#241d2e">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; form-action 'none'; base-uri 'none'; frame-ancestors 'none'">
+<link rel="manifest" href="manifest.webmanifest">
+<style>
+  :root{--bg:#f6f5f2;--panel:#fff;--ink:#241d2e;--muted:#655d70;--line:#d9d6cf;--accent:#4b3a6b;--accent-ink:#fff;
+        --bad:#8f2a2a;--warn:#7a5510;--ok:#3d5a3d;--mono:ui-monospace,Menlo,Consolas,monospace;--sans:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans",sans-serif}
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.55;font-size:15px}
+  header.top{border-bottom:1px solid var(--line);background:var(--panel);padding:14px 20px;display:flex;gap:14px;align-items:baseline;flex-wrap:wrap}
+  header.top h1{font-size:18px;margin:0}
+  header.top p{margin:0;color:var(--muted);font-size:13px}
+  header.top a{margin-left:auto;color:var(--accent);font-size:13px;text-decoration:none;border-bottom:1px solid currentColor}
+  main{max-width:860px;margin:0 auto;padding:18px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:14px}
+  .card h2{font-size:15px;margin:0 0 6px}
+  .card p.claim{margin:0 0 8px;color:var(--muted);font-size:13px}
+  label.fld{display:block;font-size:11px;color:var(--muted);margin:8px 0 4px;text-transform:uppercase;letter-spacing:.06em}
+  input[type=text]{font:inherit;font-size:14px;padding:8px 10px;border:1px solid var(--line);border-radius:7px;background:#fff;color:inherit;width:100%}
+  button{font:inherit;font-size:13px;padding:8px 13px;border-radius:7px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer}
+  button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+  button.small{padding:4px 9px;font-size:12px}
+  .bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px}
+  .bar .grow{flex:1}
+  .hint{color:var(--muted);font-size:12px}
+  .status{margin:10px 0;padding:10px 12px;border-radius:8px;border:1px solid var(--line);background:var(--panel);font-size:13px;display:none}
+  .status.show{display:block}
+  .status.bad{border-color:#e3b7b7;background:#fdf3f3;color:#7d1f1f}
+  .status.ok{border-color:#b7d8cd;background:#f2f9f6;color:#14503f}
+  .status.warn{border-color:#e8d5ae;background:#fdf8ee;color:#6b4700}
+  .root{font-family:var(--mono);font-size:30px;font-weight:700;letter-spacing:.06em}
+  ul.list{list-style:none;padding:0;margin:8px 0 0;display:grid;gap:7px}
+  ul.list li{border:1px solid var(--line);border-left:4px solid var(--ok);border-radius:8px;padding:9px 11px;background:#fbfaf8;font-size:13px}
+  ul.list li.bad{border-left-color:var(--bad);background:#fdf3f3}
+  ul.list li .meta{display:block;font-size:11px;color:var(--muted);font-family:var(--mono);margin-top:3px}
+  .gap{margin:0 0 14px;padding:12px 14px;border:1px solid #e3c9c9;border-left:4px solid #8f2a2a;border-radius:9px;background:#fdf3f3;color:#7d1f1f;font-size:13px}
+  footer{max-width:860px;margin:0 auto;padding:18px 20px 40px;color:var(--muted);font-size:12px;border-top:1px solid var(--line)}
+  [hidden]{display:none !important}
+</style>
+</head>
+<body>
+<header class="top">
+  <h1>Quorum</h1>
+  <p>Signed votes, a tally that names what it rejected, and a root anyone can recompute.</p>
+  <a href="../index.html">about</a>
+</header>
+
+<main>
+  <div class="status" id="status" role="status" aria-live="polite"></div>
+
+  <p class="gap"><strong>There is no camera and no QR scanner here.</strong> A vote payload is text — the string a QR would carry — and the root is a short string you can read aloud. Signing is a keyed checksum, not a cryptographic signature, and the page says so.</p>
+
+  <section class="card">
+    <h2>Cast a vote</h2>
+    <div class="bar" style="margin-top:0">
+      <div style="flex:2"><label class="fld" for="motion">Motion</label><input type="text" id="motion" value="tea fund"></div>
+      <div style="width:120px"><label class="fld" for="voter">Voter</label><input type="text" id="voter" value="Sohil"></div>
+      <div style="width:110px"><label class="fld" for="choice">Vote</label><input type="text" id="choice" value="for"></div>
+      <div style="width:100px"><label class="fld" for="key">Key</label><input type="text" id="key" value="k1"></div>
+      <button class="primary" type="button" id="castBtn" style="margin-top:16px">Cast</button>
+    </div>
+    <ul class="list" id="voteList"></ul>
+  </section>
+
+  <section class="card">
+    <h2>The tally</h2>
+    <div class="hint" id="tallySays"></div>
+    <ul class="list" id="rejectList"></ul>
+  </section>
+
+  <section class="card">
+    <h2>The root</h2>
+    <div class="root" id="rootText"></div>
+    <div class="hint" id="rootSays"></div>
+    <div class="bar">
+      <div style="flex:2"><label class="fld" for="claimed">Recompute from a claimed root</label><input type="text" id="claimed" placeholder="paste the other device's root"></div>
+      <button type="button" id="checkBtn" style="margin-top:16px">Compare</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Payloads</h2>
+    <p class="claim">Each vote is a single line, which is what a QR would carry. Paste one in to add it.</p>
+    <div class="bar" style="margin-top:0">
+      <input type="text" id="qrIn" placeholder="Q1|motion|voter|choice|at|sig" style="flex:1">
+      <button type="button" id="qrBtn">Add the payload</button>
+    </div>
+    <ul class="list" id="qrList"></ul>
+  </section>
+
+  <div class="bar">
+    <button type="button" class="small" id="exportBtn">Export the ballot</button>
+    <span class="hint" id="ioNote"></span>
+  </div>
+
+  <footer>
+    Quorum counts valid votes only, names every vote it rejects, and gives a root that a second device can recompute character for character. Signing is a
+    keyed checksum, not a cryptographic signature — it catches an edited payload, and it is not a security guarantee.
+    <br>PolyForm Noncommercial 1.0.0 · (c) 2026 Dr Sohil Momin ·
+    <a href="https://github.com/drsamonline/app-quorum/releases/tag/app-latest">Windows, Android and Linux builds</a>
+  </footer>
+</main>
+
+<script src="web-kit.js"></script>
+<script src="export-kit.js"></script>
+<script src="quorum-core.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

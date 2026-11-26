@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en-IN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quorum — signed votes, and a root anyone can check</title>
+<meta name="description" content="Cast signed votes and recompute the root on a second device from the payloads. A vote with a broken signature is rejected and named.">
+<meta name="theme-color" content="#241d2e">
+<style>
+  :root{--bg:#f6f5f2;--panel:#fff;--ink:#241d2e;--muted:#655d70;--line:#d9d6cf;--accent:#4b3a6b}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans",sans-serif}
+  main{max-width:760px;margin:0 auto;padding:50px 20px 64px}
+  h1{font-size:33px;line-height:1.15;letter-spacing:-.02em;margin:0 0 10px}
+  .lede{font-size:18px;color:var(--muted);margin:0 0 26px}
+  .cta{display:inline-block;background:var(--accent);color:#fff;text-decoration:none;font-weight:600;padding:12px 20px;border-radius:9px}
+  .status{margin:26px 0;padding:14px 16px;border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:9px;background:var(--panel);font-size:14px}
+  .status b{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px}
+  h2{font-size:17px;margin:30px 0 8px}
+  ul{padding-left:20px}li{margin:4px 0}
+  code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;background:#eeede9;padding:1px 5px;border-radius:4px}
+  table{border-collapse:collapse;width:100%;font-size:14px;margin-top:8px}
+  th,td{text-align:left;border-bottom:1px solid var(--line);padding:7px 8px;vertical-align:top}
+  th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.06em}
+  .gap{margin:22px 0 0;padding:12px 14px;border:1px solid #e3c9c9;border-left:4px solid #8f2a2a;border-radius:9px;background:#fdf3f3;color:#7d1f1f;font-size:13.5px}
+  footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--line);color:var(--muted);font-size:12px}
+  a{color:var(--accent)}
+</style></head>
+<body><main>
+  <h1>Quorum</h1>
+  <p class="lede">Signed votes, a tally that names what it rejected, and a <strong>root anyone can recompute</strong> — character for character.</p>
+  <a class="cta" href="play/index.html">Open Quorum</a>
+
+  <p class="gap"><strong>There is no camera and no QR scanner here</strong>, and signing is a keyed checksum, not a cryptographic signature. A vote payload is text — the string a QR would carry — and the root is eight characters you could read aloud. It catches an edited payload; it is not a security guarantee, and this page will not pretend otherwise.</p>
+
+  <div class="status">
+    <b>Status</b>
+    Built and working: votes signed with a keyed checksum; a tally that counts valid votes only and <strong>names every vote it rejects</strong>; a root over the payloads that a second device recomputes and compares; and a payload string per vote, which is what a QR would carry.
+    <br><b>Release</b>: Windows EXE, Android APK and Linux binary, built from this source in CI — <a href="https://github.com/drsamonline/app-quorum/releases/tag/app-latest">app-latest</a>.
+    <br><b>Not built</b>: a camera, a QR scanner, and real cryptography. The payloads are plain text and the signature is a checksum.
+  </div>
+
+  <h2>What it does</h2>
+  <ul>
+    <li>Casts a vote — for, against or abstain — signed with the voter's key.</li>
+    <li>Verifies each vote against the key its voter published, and rejects an edited one <em>by name</em>.</li>
+    <li>Gives a root over the payloads; a second device recomputes it and the two strings must match exactly.</li>
+    <li>Exchanges votes as single-line payloads — the string a QR would carry.</li>
+  </ul>
+
+  <h2>What it will not do</h2>
+  <ul>
+    <li><strong>Count an invalid vote.</strong> The tally is the number of valid signed votes.</li>
+    <li><strong>Drop a rejected vote silently.</strong> It is named, with the reason.</li>
+    <li><strong>Claim cryptographic security.</strong> The signing is a keyed checksum and the page says so.</li>
+    <li><strong>Use the internet.</strong> No <code>fetch</code>, no endpoint; CSP <code>connect-src 'none'</code>.</li>
+  </ul>
+
+  <h2>When things go wrong</h2>
+  <table>
+    <tr><th>Case</th><th>What happens</th></tr>
+    <tr><td>Bad input</td><td>No motion, no voter, no choice, a nonsense choice, no key, a payload that is not a vote — each refused with the field named.</td></tr>
+    <tr><td>A tampered vote</td><td>Rejected, named, and left out of the tally — and the root changes, so the two devices disagree visibly.</td></tr>
+    <tr><td>No network</td><td>Nothing changes; there is no network code.</td></tr>
+    <tr><td>Storage full or unavailable</td><td><strong>NOT SAVED</strong>, and the ballot on screen is unchanged.</td></tr>
+    <tr><td>Corrupt saved state</td><td>Reported and offered for export; never replaced with an empty ballot — that looks like nobody voted.</td></tr>
+  </table>
+
+  <h2>How to run it</h2>
+  <ul>
+    <li><strong>Here</strong>: <a href="play/index.html">play/index.html</a>, or install it from your browser's menu.</li>
+    <li><strong>Offline file</strong>: open <code>docs/play/index.html</code> straight from disk.</li>
+    <li><strong>Tests</strong>: <code>node tests/self-tests.js</code>.</li>
+  </ul>
+
+  <footer>PolyForm Noncommercial 1.0.0 · (c) 2026 Dr Sohil Momin · <a href="https://github.com/drsamonline/app-quorum">source</a></footer>
+</main></body></html>

@@ -1,0 +1,40 @@
+NOTICE
+======
+
+Quorum — https://github.com/drsamonline/app-quorum
+Copyright 2026 Dr Sohil Momin. Licensed under PolyForm Noncommercial 1.0.0 (see LICENSE).
+
+Third-party components
+----------------------
+
+None. Quorum has no third-party dependency and no CDN.
+
+Vendored from this project's own kits (same licence, same author), copied verbatim on 26/11/2026:
+
+- web-kit 0.1.0 — docs/play/web-kit.js — the offline shell, storage helpers and PWA registration
+- export-kit 1.0.0 — docs/play/export-kit.js — Blob download, used for the ballot export
+
+Neither kit is modified. Neither makes a network request.
+
+The signing is a checksum, not a signature
+------------------------------------------
+
+A vote is signed with FNV-1a over its payload and the voter's key. That catches a mangled or edited payload
+and it is NOT a cryptographic signature: there is no secret-key exchange, no protection against someone who
+knows the key, and no defence against a determined forger.
+
+Do not use this app for anything that needs real cryptographic guarantees. It is a room-sized tally with a
+root two devices can compare — nothing more.
+
+What the root does
+------------------
+
+The root is a hash over the vote payloads in sorted order, so any two devices holding the same votes compute
+the same eight characters. Flip one vote and the root changes; that is the check, and it is a check anyone in
+the room can repeat by hand.
+
+No camera
+---------
+
+There is no QR scanner and no camera in this app. A payload is a single line of text — the string a QR would
+carry — and you move it however you like.
