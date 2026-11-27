@@ -1,75 +1,69 @@
 <!DOCTYPE html>
 <html lang="en-IN">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Quorum — signed votes, and a root anyone can check</title>
-<meta name="description" content="Cast signed votes and recompute the root on a second device from the payloads. A vote with a broken signature is rejected and named.">
-<meta name="theme-color" content="#241d2e">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quorum — a ballot anyone can recount</title>
+<meta name="description" content="Signed votes, a tally that names what it rejected, and a root anyone can recompute character for character.">
+<meta name="theme-color" content="#eef0f4">
 <style>
-  :root{--bg:#f6f5f2;--panel:#fff;--ink:#241d2e;--muted:#655d70;--line:#d9d6cf;--accent:#4b3a6b}
+  :root{--bg:#eef0f4;--ballot:#fdfdff;--ink:#1b2334;--blue:#28406b;--grey:#6b7688;--red:#a33b32;--serif:Georgia,"Iowan Old Style",serif;--mono:ui-monospace,Menlo,Consolas,monospace}
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans",sans-serif}
-  main{max-width:760px;margin:0 auto;padding:50px 20px 64px}
-  h1{font-size:33px;line-height:1.15;letter-spacing:-.02em;margin:0 0 10px}
-  .lede{font-size:18px;color:var(--muted);margin:0 0 26px}
-  .cta{display:inline-block;background:var(--accent);color:#fff;text-decoration:none;font-weight:600;padding:12px 20px;border-radius:9px}
-  .status{margin:26px 0;padding:14px 16px;border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:9px;background:var(--panel);font-size:14px}
-  .status b{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px}
-  h2{font-size:17px;margin:30px 0 8px}
-  ul{padding-left:20px}li{margin:4px 0}
-  code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;background:#eeede9;padding:1px 5px;border-radius:4px}
-  table{border-collapse:collapse;width:100%;font-size:14px;margin-top:8px}
-  th,td{text-align:left;border-bottom:1px solid var(--line);padding:7px 8px;vertical-align:top}
-  th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.06em}
-  .gap{margin:22px 0 0;padding:12px 14px;border:1px solid #e3c9c9;border-left:4px solid #8f2a2a;border-radius:9px;background:#fdf3f3;color:#7d1f1f;font-size:13.5px}
-  footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--line);color:var(--muted);font-size:12px}
-  a{color:var(--accent)}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--serif)}
+  .ballot{max-width:660px;margin:26px auto;background:var(--ballot);padding:40px 42px 44px;
+          border:1px solid #c9cfdb;box-shadow:0 10px 30px rgba(27,35,52,.09);position:relative}
+  .ballot::after{content:"";position:absolute;inset:9px;border:1px dashed #c9cfdb;pointer-events:none}
+  .top{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;letter-spacing:.18em;
+       text-transform:uppercase;color:var(--grey);border-bottom:1px solid #c9cfdb;padding-bottom:8px;margin-bottom:22px}
+  h1{font-size:clamp(30px,6vw,44px);line-height:1.05;margin:0 0 6px;letter-spacing:-.02em;font-weight:400}
+  .sub{font-style:italic;color:var(--grey);margin:0 0 24px;font-size:16px}
+  .motion{border:1px solid var(--ink);padding:14px 16px;margin:0 0 20px}
+  .motion .k{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--grey)}
+  .motion .m{font-size:17px;margin-top:4px}
+  .opts{margin:0 0 20px}
+  .opt{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px dotted #c9cfdb;font-size:15px}
+  .box{width:16px;height:16px;border:1.5px solid var(--ink);flex:0 0 auto;position:relative}
+  .box.on::after{content:"";position:absolute;inset:2.5px;background:var(--blue)}
+  .opt .n{margin-left:auto;font-family:var(--mono);font-size:12.5px;color:var(--grey)}
+  .root{border-top:2px solid var(--ink);border-bottom:2px solid var(--ink);padding:10px 0;margin:0 0 20px;
+        display:flex;justify-content:space-between;align-items:baseline;font-family:var(--mono)}
+  .root .k{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--grey)}
+  .root .v{font-size:22px;letter-spacing:.1em;color:var(--blue)}
+  p{font-size:15px;line-height:1.7;margin:0 0 12px}
+  .rej{font-family:var(--mono);font-size:12px;color:var(--red);border-left:3px solid var(--red);padding-left:10px;margin:0 0 18px}
+  .go{display:block;text-align:center;background:var(--blue);color:#fff;text-decoration:none;padding:13px;
+      font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase}
+  .go:hover{background:var(--ink)}
+  .sponsor{margin:22px 0 0;border-top:1px solid #c9cfdb;padding-top:12px;font-family:var(--mono);font-size:11px;color:var(--grey)}
+  .sponsor a{color:var(--blue);text-decoration:none;border-bottom:1px solid currentColor}
+  .foot{margin-top:14px;font-family:var(--mono);font-size:10.5px;color:var(--grey);line-height:1.8}
+  .foot a{color:var(--blue)}
 </style></head>
-<body><main>
+<body><div class="ballot">
+  <div class="top"><span>ballot · room of seven</span><span>no server · no account</span></div>
   <h1>Quorum</h1>
-  <p class="lede">Signed votes, a tally that names what it rejected, and a <strong>root anyone can recompute</strong> — character for character.</p>
-  <a class="cta" href="play/index.html">Open Quorum</a>
+  <p class="sub">Seven votes, one root, and anyone in the room can recount it.</p>
 
-  <p class="gap"><strong>There is no camera and no QR scanner here</strong>, and signing is a keyed checksum, not a cryptographic signature. A vote payload is text — the string a QR would carry — and the root is eight characters you could read aloud. It catches an edited payload; it is not a security guarantee, and this page will not pretend otherwise.</p>
+  <div class="motion"><div class="k">motion</div><div class="m">“the tea fund should cover the new kettle”</div></div>
 
-  <div class="status">
-    <b>Status</b>
-    Built and working: votes signed with a keyed checksum; a tally that counts valid votes only and <strong>names every vote it rejects</strong>; a root over the payloads that a second device recomputes and compares; and a payload string per vote, which is what a QR would carry.
-    <br><b>Release</b>: Windows EXE, Android APK and Linux binary, built from this source in CI — <a href="https://github.com/drsamonline/app-quorum/releases/tag/app-latest">app-latest</a>.
-    <br><b>Not built</b>: a camera, a QR scanner, and real cryptography. The payloads are plain text and the signature is a checksum.
+  <div class="opts">
+    <div class="opt"><span class="box on"></span> for <span class="n">4</span></div>
+    <div class="opt"><span class="box"></span> against <span class="n">3</span></div>
+    <div class="opt"><span class="box"></span> abstain <span class="n">0</span></div>
   </div>
 
-  <h2>What it does</h2>
-  <ul>
-    <li>Casts a vote — for, against or abstain — signed with the voter's key.</li>
-    <li>Verifies each vote against the key its voter published, and rejects an edited one <em>by name</em>.</li>
-    <li>Gives a root over the payloads; a second device recomputes it and the two strings must match exactly.</li>
-    <li>Exchanges votes as single-line payloads — the string a QR would carry.</li>
-  </ul>
+  <div class="root"><span class="k">root</span><span class="v">75fcc61b</span></div>
 
-  <h2>What it will not do</h2>
-  <ul>
-    <li><strong>Count an invalid vote.</strong> The tally is the number of valid signed votes.</li>
-    <li><strong>Drop a rejected vote silently.</strong> It is named, with the reason.</li>
-    <li><strong>Claim cryptographic security.</strong> The signing is a keyed checksum and the page says so.</li>
-    <li><strong>Use the internet.</strong> No <code>fetch</code>, no endpoint; CSP <code>connect-src 'none'</code>.</li>
-  </ul>
+  <p>Each vote is signed and every tally counts <em>valid</em> votes only. A vote whose signature does not match is rejected <strong>and named</strong> — a silent drop is the failure mode of every bad tally.</p>
+  <p class="rej">rejected: Sohil — the signature does not match the vote; it was edited after signing.</p>
 
-  <h2>When things go wrong</h2>
-  <table>
-    <tr><th>Case</th><th>What happens</th></tr>
-    <tr><td>Bad input</td><td>No motion, no voter, no choice, a nonsense choice, no key, a payload that is not a vote — each refused with the field named.</td></tr>
-    <tr><td>A tampered vote</td><td>Rejected, named, and left out of the tally — and the root changes, so the two devices disagree visibly.</td></tr>
-    <tr><td>No network</td><td>Nothing changes; there is no network code.</td></tr>
-    <tr><td>Storage full or unavailable</td><td><strong>NOT SAVED</strong>, and the ballot on screen is unchanged.</td></tr>
-    <tr><td>Corrupt saved state</td><td>Reported and offered for export; never replaced with an empty ballot — that looks like nobody voted.</td></tr>
-  </table>
+  <a class="go" href="play/index.html">open the ballot →</a>
 
-  <h2>How to run it</h2>
-  <ul>
-    <li><strong>Here</strong>: <a href="play/index.html">play/index.html</a>, or install it from your browser's menu.</li>
-    <li><strong>Offline file</strong>: open <code>docs/play/index.html</code> straight from disk.</li>
-    <li><strong>Tests</strong>: <code>node tests/self-tests.js</code>.</li>
-  </ul>
-
-  <footer>PolyForm Noncommercial 1.0.0 · (c) 2026 Dr Sohil Momin · <a href="https://github.com/drsamonline/app-quorum">source</a></footer>
-</main></body></html>
+  <div class="sponsor">
+    <strong>Sponsor this app.</strong> Free, offline, no account. If it earned its keep:
+    <a href="https://github.com/sponsors/drsamonline">github.com/sponsors/drsamonline</a>
+  </div>
+  <p class="foot">Signing is a keyed checksum, not a cryptographic signature — it catches an edited payload and is
+  not a security guarantee.<br>Windows · Android · Linux at
+  <a href="https://github.com/drsamonline/app-quorum/releases/tag/app-latest">app-latest</a> ·
+  PolyForm Noncommercial 1.0.0 · (c) 2026 Dr Sohil Momin</p>
+</div></body></html>

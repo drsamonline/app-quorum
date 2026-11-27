@@ -42,6 +42,26 @@
   .gap{margin:0 0 14px;padding:12px 14px;border:1px solid #e3c9c9;border-left:4px solid #8f2a2a;border-radius:9px;background:#fdf3f3;color:#7d1f1f;font-size:13px}
   footer{max-width:860px;margin:0 auto;padding:18px 20px 40px;color:var(--muted);font-size:12px;border-top:1px solid var(--line)}
   [hidden]{display:none !important}
+
+  body{background:#eef0f4;color:#1b2334;font-family:Georgia,serif}
+  header.top{background:#fdfdff;border-bottom:1px solid #c9cfdb}
+  header.top h1{font-weight:400}
+  header.top a{color:#28406b}
+  main{background:#fdfdff;max-width:880px;box-shadow:0 0 0 1px #c9cfdb}
+  .card{background:#fdfdff;border:1px solid #c9cfdb;border-radius:1px}
+  .card h2{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:10.5px;letter-spacing:.16em;
+           text-transform:uppercase;color:#28406b}
+  .card p.claim{color:#6b7688;font-style:italic}
+  button{border-radius:1px;border-color:#c9cfdb;background:#fdfdff}
+  button.primary{background:#28406b;border-color:#28406b;color:#fff}
+  input[type=text]{background:#fff;border-color:#c9cfdb;border-radius:1px;font-family:ui-monospace,monospace}
+  .root{font-family:ui-monospace,monospace;color:#28406b}
+  ul.list li{background:#fff;border-color:#c9cfdb;border-left-color:#28406b;border-radius:1px}
+  ul.list li.bad{border-left-color:#a33b32;background:#fbf1ef}
+  .status.ok{border-color:#b7c6dd;background:#f2f5fa;color:#28406b}
+  .status.bad{border-color:#d8bcae;background:#fbeee7;color:#8a4222}
+  .sponsor{margin:22px 0 0;border-top:1px solid #c9cfdb;padding-top:12px;font-family:ui-monospace,monospace;font-size:11px;color:#6b7688}
+  .sponsor a{color:#28406b;text-decoration:none;border-bottom:1px solid currentColor}
 </style>
 </head>
 <body>
@@ -101,6 +121,10 @@
     <span class="hint" id="ioNote"></span>
   </div>
 
+  <div class="sponsor">
+    <strong>Sponsor this app.</strong> Free, offline, no account. If it earned its keep:
+    <a href="https://github.com/sponsors/drsamonline">github.com/sponsors/drsamonline</a>
+  </div>
   <footer>
     Quorum counts valid votes only, names every vote it rejects, and gives a root that a second device can recompute character for character. Signing is a
     keyed checksum, not a cryptographic signature — it catches an edited payload, and it is not a security guarantee.
